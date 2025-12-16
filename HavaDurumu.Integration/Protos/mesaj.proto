@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "HavaKirlilik.Protos"; // Burası senin proje adınla aynı olmalı
+
+package mesajlasma;
+
+service Iletisim {
+  rpc SelamVer (Istek) returns (Cevap);
+}
+
+message Istek {
+  string ad = 1;
+}
+
+message Cevap {
+  string metin = 1;
+}

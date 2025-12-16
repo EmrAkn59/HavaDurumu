@@ -1,0 +1,2 @@
+<%@ ServiceHost Language="C#" Debug="true" Service="HavaDurumu.Integration.Services.AirQualityService" Factory="System.ServiceModel.Activation.ServiceHostFactory" %>
+
