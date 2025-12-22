@@ -1,7 +1,7 @@
-﻿using HavaDurumu.Data.Context;
+using HavaDurumu.Data.Context;
 using HavaDurumu.Data.Entities;
 using HavaDurumu.DataAccess.Interfaces;
-using HavaDurumu.DataAccess.Repositories;
+using HavaDurumu.Core.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;

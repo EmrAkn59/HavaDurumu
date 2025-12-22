@@ -1,4 +1,4 @@
-﻿using HavaDurumu.Integration;
+using HavaDurumu.Integration;
 using HavaDurumu.Business.Abstract;
 using HavaDurumu.Business.Services;
 using HavaDurumu.DataAccess.Interfaces;
@@ -21,6 +21,8 @@ namespace HavaDurumu.Web.Controllers
     {
         HavaDurumuServisi havaServis = new HavaDurumuServisi();
         NodeService nodeServis = new NodeService();
+        LLMService llmServis = new LLMService();
+        RiskAnalizService riskAnalizServis = new RiskAnalizService();
         AppDbContext _context;
         IStationService _stationService;
         IMeasurementService _measurementService;
@@ -179,8 +181,8 @@ namespace HavaDurumu.Web.Controllers
                     }
 
                     var nodeData = await nodeServis.NodeVerisiniGetir(pm25Value.HasValue ? (double?)pm25Value.Value : null);
-                    ViewBag.NodeMesaj = nodeData?.mesaj ?? "API Bağlantısı Yok";
-                    ViewBag.NodeDurum = nodeData?.durum ?? "Bağlantı Yok";
+                    ViewBag.NodeMesaj = nodeData?.mesaj ?? "API Baglantisi Yok";
+                    ViewBag.NodeDurum = nodeData?.durum ?? "Baglanti Yok";
                     ViewBag.NodePM25 = nodeData?.pm25;
                     ViewBag.NodeSeviye = nodeData?.seviye;
                     ViewBag.NodeRenk = nodeData?.renk ?? "gray";
@@ -199,6 +201,30 @@ namespace HavaDurumu.Web.Controllers
                         ViewBag.PM25 = latestMeasurement.PM25_Value?.ToString("F0") ?? "0";
                         ViewBag.CO2 = latestMeasurement.CO2_Value?.ToString("F0") ?? "0";
                         ViewBag.LastMeasureDate = latestMeasurement.MeasureDate;
+
+                        // Risk Analiz Servisi'nden risk analizi yap
+                        try
+                        {
+                            var riskAnaliz = await riskAnalizServis.RiskAnaliziYap(
+                                latestMeasurement.MeasureID,
+                                (double)(latestMeasurement.PM25_Value ?? 0),
+                                (double)(latestMeasurement.CO2_Value ?? 0),
+                                (double)(latestMeasurement.Temperature ?? 0),
+                                (double)(latestMeasurement.Humidity ?? 0)
+                            );
+
+                            ViewBag.RiskIsRisky = riskAnaliz.IsRisky;
+                            ViewBag.RiskMessage = riskAnaliz.Message;
+                            ViewBag.RiskLevel = riskAnaliz.RiskLevel;
+                            ViewBag.RiskDurum = riskAnaliz.Durum;
+                        }
+                        catch (Exception riskEx)
+                        {
+                            ViewBag.RiskIsRisky = false;
+                            ViewBag.RiskMessage = $"Risk analizi yapılamadı: {riskEx.Message}";
+                            ViewBag.RiskLevel = "Bilinmiyor";
+                            ViewBag.RiskDurum = "Hata";
+                        }
                     }
                     else
                     {
@@ -208,25 +234,10 @@ namespace HavaDurumu.Web.Controllers
                         ViewBag.PM25 = "0";
                         ViewBag.CO2 = "0";
                         ViewBag.LastMeasureDate = DateTime.Now;
-                    }
-
-                    // En son AI tahminini çek
-                    var latestPrediction = _context.Predictions
-                        .Where(p => p.StationID == station.StationID)
-                        .OrderByDescending(p => p.CreatedAt)
-                        .FirstOrDefault();
-
-                    if (latestPrediction != null)
-                    {
-                        ViewBag.PredictedValue = latestPrediction.PredictedValue?.ToString("F1") ?? "0";
-                        ViewBag.ModelVersion = latestPrediction.ModelVersion ?? "v2.1";
-                        ViewBag.PredictionDate = latestPrediction.PredictedDate ?? latestPrediction.CreatedAt;
-                    }
-                    else
-                    {
-                        ViewBag.PredictedValue = "0";
-                        ViewBag.ModelVersion = "v2.1";
-                        ViewBag.PredictionDate = DateTime.Now;
+                        ViewBag.RiskIsRisky = false;
+                        ViewBag.RiskMessage = "Ölçüm verisi olmadığı için risk analizi yapılamadı.";
+                        ViewBag.RiskLevel = "Bilinmiyor";
+                        ViewBag.RiskDurum = "Veri Yok";
                     }
 
                     // Son 24 saatlik ölçüm verilerini çek (grafik için)
@@ -264,21 +275,11 @@ namespace HavaDurumu.Web.Controllers
 
                     ViewBag.ChartLabels = chartLabels;
                     ViewBag.ChartData = chartData;
-
-                    // Çözülmemiş alarmları çek (en son 10 tanesi)
-                    var alerts = _context.Alerts
-                        .Include("Station")
-                        .Where(a => a.StationID == station.StationID && !a.IsResolved)
-                        .OrderByDescending(a => a.CreatedAt)
-                        .Take(10)
-                        .ToList();
-
-                    ViewBag.Alerts = alerts;
                 }
                 else
                 {
                     // İstasyon yoksa varsayılan değerler
-                    ViewBag.StationName = "İstasyon Bulunamadı";
+                    ViewBag.StationName = "Istasyon Bulunamadi";
                     ViewBag.CityName = "Bilinmeyen";
                     ViewBag.Sicaklik = "0";
                     ViewBag.Nem = "0";
@@ -286,12 +287,11 @@ namespace HavaDurumu.Web.Controllers
                     ViewBag.CO2 = "0";
                     ViewBag.ChartLabels = new List<string> { "00:00", "04:00", "08:00", "12:00", "16:00", "20:00" };
                     ViewBag.ChartData = new List<object> { 0, 0, 0, 0, 0, 0 };
-                    ViewBag.Alerts = new List<Alert>();
 
                     // Node.js servisinden veri çek (PM2.5 değeri olmadan)
                     var nodeData = await nodeServis.NodeVerisiniGetir(null);
-                    ViewBag.NodeMesaj = nodeData?.mesaj ?? "API Bağlantısı Yok";
-                    ViewBag.NodeDurum = nodeData?.durum ?? "Bağlantı Yok";
+                    ViewBag.NodeMesaj = nodeData?.mesaj ?? "API Baglantisi Yok";
+                    ViewBag.NodeDurum = nodeData?.durum ?? "Baglanti Yok";
                     ViewBag.NodePM25 = nodeData?.pm25;
                     ViewBag.NodeSeviye = nodeData?.seviye;
                     ViewBag.NodeRenk = nodeData?.renk ?? "gray";
@@ -307,7 +307,6 @@ namespace HavaDurumu.Web.Controllers
                 ViewBag.CO2 = "0";
                 ViewBag.ChartLabels = new List<string> { "00:00", "04:00", "08:00", "12:00", "16:00", "20:00" };
                 ViewBag.ChartData = new List<object> { 0, 0, 0, 0, 0, 0 };
-                ViewBag.Alerts = new List<Alert>();
             }
 
             return View();
@@ -425,6 +424,82 @@ namespace HavaDurumu.Web.Controllers
             {
                 TempData["UpdateError"] = "Veri güncellenirken hata oluştu: " + ex.Message;
                 return RedirectToAction("Index", new { stationId = stationId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> LLMTahminYap(int? stationId = null)
+        {
+            try
+            {
+                if (stationId == null || stationId.Value <= 0)
+                {
+                    return Json(new { basari = false, hata = "İstasyon seçilmedi" });
+                }
+
+                var station = _context.Stations
+                    .Include("City")
+                    .FirstOrDefault(s => s.StationID == stationId.Value);
+
+                if (station == null)
+                {
+                    return Json(new { basari = false, hata = "İstasyon bulunamadı" });
+                }
+
+                // En son ölçüm verisini çek
+                var latestMeasurement = _context.Measurements
+                    .Where(m => m.StationID == station.StationID)
+                    .OrderByDescending(m => m.MeasureDate)
+                    .FirstOrDefault();
+
+                if (latestMeasurement == null)
+                {
+                    return Json(new { basari = false, hata = "Ölçüm verisi bulunamadı" });
+                }
+
+                // Şehir adını LLM'nin beklediği formata çevir
+                string sehirAdi = station.City?.CityName?.ToLower() ?? "istanbul";
+                if (sehirAdi.Contains("adana")) sehirAdi = "adana";
+                else if (sehirAdi.Contains("ankara")) sehirAdi = "ankara";
+                else if (sehirAdi.Contains("antalya")) sehirAdi = "antalya";
+                else if (sehirAdi.Contains("istanbul")) sehirAdi = "istanbul";
+                else if (sehirAdi.Contains("izmir")) sehirAdi = "izmir";
+                else sehirAdi = "istanbul"; // Varsayılan
+
+                string tarihStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+                double nem = (double)(latestMeasurement.Humidity ?? 50);
+                double ruzgar = 10; // Varsayılan (Measurement'da yok)
+                double basinc = 1013; // Varsayılan (Measurement'da yok)
+                int yagisVarMi = 0; // Varsayılan (yok)
+
+                var llmTahmin = await llmServis.TahminYap(sehirAdi, tarihStr, nem, ruzgar, basinc, yagisVarMi);
+
+                if (llmTahmin != null && llmTahmin.basari)
+                {
+                    return Json(new
+                    {
+                        basari = true,
+                        tahmin_edilen_sicaklik = llmTahmin.tahmin_edilen_sicaklik?.ToString("F1") ?? "0",
+                        sehir = llmTahmin.sehir,
+                        tarih = llmTahmin.tarih
+                    });
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        basari = false,
+                        hata = llmTahmin?.hata ?? "LLM tahmin yapılamadı"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    basari = false,
+                    hata = $"LLM hatası: {ex.Message}"
+                });
             }
         }
     }

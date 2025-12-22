@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "RiskAnalizServisi";
+
+package pollution;
+
+// Servisimizin adi
+service PollutionRisk {
+  // Risk analizi yapan fonksiyon
+  rpc AnalyzeRisk (MeasurementData) returns (RiskReport);
+}
+
+// Veritabanindaki Measurement classinin gRPC karsiligi
+message MeasurementData {
+  int64 measure_id = 1;       
+  double pm25_value = 2;      
+  double co2_value = 3;       
+  double temperature = 4;     
+  double humidity = 5;        
+}
+
+// Geriye donecegimiz cevap
+message RiskReport {
+  bool is_risky = 1;          
+  string message = 2;         
+  string risk_level = 3;      
+}

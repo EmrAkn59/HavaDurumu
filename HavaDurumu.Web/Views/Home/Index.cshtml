@@ -1,7 +1,7 @@
-﻿@using HavaDurumu.Data.Entities
+@using HavaDurumu.Data.Entities
 @using Newtonsoft.Json
 @{
-    ViewBag.Title = "İstasyon Paneli";
+    ViewBag.Title = "Istasyon Paneli";
     Layout = null;
 }
 
@@ -10,7 +10,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hava Kalitesi İzleme Sistemi</title>
+    <title>Hava Kalitesi Izleme Sistemi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -25,30 +25,6 @@
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .icon-box { font-size: 2.5rem; opacity: 0.7; }
 
-        /* AI Tahmin Kartı Özel Tasarımı */
-        .ai-card {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden;
-        }
-        .ai-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-            animation: pulse 5s infinite;
-        }
-        @@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-        .prediction-value { font-size: 3.5rem; font-weight: bold; }
-        .prediction-label { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
-
-        .badge-custom { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; }
 
         /* API Verileri Yan Paneli */
         .api-data-panel {
@@ -61,7 +37,9 @@
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
             transition: right 0.3s ease;
             z-index: 1000;
-            overflow-y: auto;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .api-data-panel.open {
             right: 0;
@@ -73,9 +51,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
         .api-data-panel-body {
             padding: 20px;
+            flex: 1;
+            overflow-y: auto;
         }
         .api-data-item {
             background: #f8f9fa;
@@ -108,6 +89,11 @@
             z-index: 999;
             box-shadow: -2px 0 10px rgba(0,0,0,0.2);
         }
+        .node-api-indicator {
+            position: relative;
+            z-index: 1001;
+            min-width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -118,13 +104,13 @@
             <small class="text-muted">v1.0 Dashboard</small>
         </div>
         
-        <!-- Şehir Seçici -->
+        <!-- Sehir Secici -->
         <div style="padding: 12px 20px;">
             <label style="color: #adb5bd; font-size: 12px; margin-bottom: 5px; display: block;">
-                <i class="fas fa-city me-1"></i> Şehir Seç
+                <i class="fas fa-city me-1"></i> Sehir Sec
             </label>
             <select id="citySelect" onchange="changeCity()" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #495057; background-color: #212529; color: #fff; font-size: 14px; margin-bottom: 10px;">
-                <option value="0">Tüm Şehirler</option>
+                <option value="0">Tum Sehirler</option>
                 @if (ViewBag.AllCities != null)
                 {
                     foreach (var city in (List<City>)ViewBag.AllCities)
@@ -137,7 +123,7 @@
             </select>
         </div>
 
-        <!-- Veriyi Güncelle Butonu -->
+        <!-- Veriyi Guncelle Butonu -->
         <div style="padding: 12px 20px; padding-top: 0;">
             @if (ViewBag.UpdateSuccess != null)
             {
@@ -160,15 +146,15 @@
             <form method="post" action="/Home/UpdateWeatherData" id="updateWeatherForm">
                 <input type="hidden" name="stationId" id="hiddenStationId" value="@(ViewBag.StationID ?? 0)" />
                 <button type="submit" id="updateWeatherBtn" style="width: 100%; padding: 10px; background-color: #0d6efd; color: white; border: none; border-radius: 5px; font-size: 14px; cursor: pointer; transition: background 0.3s;">
-                    <i class="fas fa-sync-alt me-1"></i> Veriyi Güncelle
+                    <i class="fas fa-sync-alt me-1"></i> Veriyi Guncelle
                 </button>
             </form>
         </div>
 
-        <!-- İstasyon Seçici -->
+        <!-- Istasyon Secici -->
         <div style="padding: 12px 20px; padding-top: 0;">
             <label style="color: #adb5bd; font-size: 12px; margin-bottom: 5px; display: block;">
-                <i class="fas fa-map-marker-alt me-1"></i> İstasyon Seç
+                <i class="fas fa-map-marker-alt me-1"></i> Istasyon Sec
             </label>
             <select id="stationSelect" onchange="changeStation()" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #495057; background-color: #212529; color: #fff; font-size: 14px;">
                 @if (ViewBag.FilteredStations != null && ((List<Station>)ViewBag.FilteredStations).Count > 0)
@@ -182,65 +168,69 @@
                 }
                 else
                 {
-                    <option value="0">İstasyon bulunamadı</option>
+                    <option value="0">Istasyon bulunamadi</option>
                 }
             </select>
         </div>
         
         <hr style="margin: 15px 0; border-color: #495057;">
         
-        <a href="#" class="active"><i class="fas fa-th-large me-2"></i> Genel Bakış</a>
-        <a href="#"><i class="fas fa-network-wired me-2"></i> İstasyonlar</a>
-        <a href="#"><i class="fas fa-brain me-2"></i> AI Tahminleri</a>
-        <a href="#"><i class="fas fa-bell me-2"></i> Alarmlar</a>
+        <a href="#" class="active"><i class="fas fa-th-large me-2"></i> Genel Bakis</a>
+        <a href="#"><i class="fas fa-network-wired me-2"></i> Istasyonlar</a>
         <hr>
-        <a href="/Login/CikisYap" class="text-danger"><i class="fas fa-power-off me-2"></i> Çıkış</a>
+        <a href="/Login/CikisYap" class="text-danger"><i class="fas fa-power-off me-2"></i> Cikis</a>
     </div>
 
     <div class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="mb-4">
             <div>
-                <h3 class="fw-bold">@(ViewBag.CityName ?? "Bilinmeyen") / @(ViewBag.StationName ?? "İstasyon Bulunamadı")</h3>
+                <h3 class="fw-bold">@(ViewBag.CityName ?? "Bilinmeyen") / @(ViewBag.StationName ?? "Istasyon Bulunamadi")</h3>
                 <span class="badge bg-@(ViewBag.IsActive == true ? "success" : "danger")">Sistem @(ViewBag.IsActive == true ? "Aktif" : "Pasif")</span> 
                 <small class="text-muted ms-2">Son Veri: @(ViewBag.LastMeasureDate != null ? ((DateTime)ViewBag.LastMeasureDate).ToString("dd.MM.yyyy HH:mm") : DateTime.Now.ToString("HH:mm"))</small>
             </div>
-            <div>
-                @if (ViewBag.NodeDurum != null && ViewBag.NodeDurum != "Bağlantı Yok")
-                {
-                    string renkClass = "secondary";
-                    if (ViewBag.NodeRenk != null)
+        </div>
+
+        @* Node.js API Widget - Ortalanmış *@
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-center">
+                <div class="text-center">
+                    @if (ViewBag.NodeDurum != null && ViewBag.NodeDurum != "Baglanti Yok")
                     {
-                        switch (ViewBag.NodeRenk.ToString().ToLower())
+                        string renkClass = "secondary";
+                        if (ViewBag.NodeRenk != null)
                         {
-                            case "green": renkClass = "success"; break;
-                            case "yellow": renkClass = "warning"; break;
-                            case "orange": renkClass = "warning"; break;
-                            case "red": renkClass = "danger"; break;
-                            default: renkClass = "secondary"; break;
+                            switch (ViewBag.NodeRenk.ToString().ToLower())
+                            {
+                                case "green": renkClass = "success"; break;
+                                case "yellow": renkClass = "warning"; break;
+                                case "orange": renkClass = "warning"; break;
+                                case "red": renkClass = "danger"; break;
+                                default: renkClass = "secondary"; break;
+                            }
                         }
+                        <div class="d-flex flex-column align-items-center">
+                            <span class="badge bg-@(renkClass) p-2 mb-2">
+                                <i class="fab fa-node-js me-1"></i> Node.js API: @ViewBag.NodeDurum
+                            </span>
+                            @if (ViewBag.NodePM25 != null)
+                            {
+                                <small class="text-muted d-block">
+                                    PM2.5: @ViewBag.NodePM25 ug/m3 | Seviye: @ViewBag.NodeSeviye
+                                </small>
+                            }
+                            @if (ViewBag.NodeTarih != null)
+                            {
+                                <small class="text-muted d-block">@ViewBag.NodeTarih</small>
+                            }
+                        </div>
                     }
-                    <div class="d-flex flex-column align-items-end">
-                        <span class="badge bg-@(renkClass) p-2 mb-1">
-                            <i class="fab fa-node-js me-1"></i> Node.js API: @ViewBag.NodeDurum
+                    else
+                    {
+                        <span class="badge bg-secondary p-2">
+                            <i class="fab fa-node-js me-1"></i> Node.js: Baglanti Yok
                         </span>
-                        @if (ViewBag.NodePM25 != null)
-                        {
-                            <small class="text-muted">
-                                PM2.5: @ViewBag.NodePM25 µg/m³ | Seviye: @ViewBag.NodeSeviye
-                            </small>
-                        }
-                        @if (ViewBag.NodeTarih != null)
-                        {
-                            <small class="text-muted">@ViewBag.NodeTarih</small>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <span class="badge bg-secondary p-2">
-                        <i class="fab fa-node-js me-1"></i> Node.js: Bağlantı Yok
-                    </span>
-                }
+                    }
+                </div>
             </div>
         </div>
 
@@ -249,8 +239,8 @@
                 <div class="card stat-card bg-white text-dark h-100">
                     <div class="card-body d-flex justify-content-between align-items-center">
                         <div>
-                            <p class="text-muted mb-1">Sıcaklık</p>
-                            <h2 class="mb-0 text-primary">@ViewBag.Sicaklik °C</h2>
+                            <p class="text-muted mb-1">Sicaklik</p>
+                            <h2 class="mb-0 text-primary">@ViewBag.Sicaklik C</h2>
                         </div>
                         <div class="icon-box text-primary"><i class="fas fa-thermometer-half"></i></div>
                     </div>
@@ -272,7 +262,7 @@
                     <div class="card-body d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1">PM 2.5</p>
-                            <h2 class="mb-0 text-warning">@(ViewBag.PM25 ?? "0") µg</h2>
+                            <h2 class="mb-0 text-warning">@(ViewBag.PM25 ?? "0") ug</h2>
                         </div>
                         <div class="icon-box text-warning"><i class="fas fa-smog"></i></div>
                     </div>
@@ -292,105 +282,13 @@
         </div>
 
         <div class="row mb-4">
-            <div class="col-lg-8">
+            <div class="col-12">
                 <div class="card stat-card h-100">
                     <div class="card-header bg-white border-0">
-                        <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line text-primary me-2"></i>24 Saatlik Değişim</h5>
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line text-primary me-2"></i>24 Saatlik Degisim</h5>
                     </div>
-                    <div class="card-body">
-                        <canvas id="weatherChart" height="100"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="card ai-card h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-
-                        <div class="mb-3">
-                            <i class="fas fa-robot fa-3x mb-2"></i>
-                            <h5 class="fw-bold">Yapay Zeka Tahmini</h5>
-                            <span class="badge bg-white text-primary badge-custom">Model @(ViewBag.ModelVersion ?? "v2.1")</span>
-                        </div>
-
-                        <div class="my-3">
-                            <span class="prediction-label">Gelecek 3 Saat İçin Beklenen</span>
-                            <div class="prediction-value">
-                                @(ViewBag.PredictedValue ?? "0")°C
-                                <span style="font-size: 1.5rem; color: #ffeb3b;"><i class="fas fa-arrow-up"></i></span>
-                            </div>
-                            <small class="text-white-50">Güven Skoru: %94</small>
-                        </div>
-
-                        <div class="mt-auto w-100 p-3" style="background: rgba(0,0,0,0.2); border-radius: 10px;">
-                            <div class="d-flex justify-content-between text-sm">
-                                <span>Algoritma:</span>
-                                <span class="fw-bold">XGBoost Regressor</span>
-                            </div>
-                            <div class="d-flex justify-content-between text-sm mt-1">
-                                <span>Son Çalışma:</span>
-                                <span>@(ViewBag.PredictionDate != null ? ((DateTime)ViewBag.PredictionDate).ToString("dd.MM.yyyy HH:mm") : "Henüz yok")</span>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="card stat-card">
-                    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3">
-                        <h5 class="mb-0 fw-bold">Sistem Alarmları</h5>
-                        <button class="btn btn-sm btn-light border">Tümünü Gör</button>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Durum</th>
-                                    <th>İstasyon</th>
-                                    <th>Mesaj</th>
-                                    <th>Tarih</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (ViewBag.Alerts != null && ((List<Alert>)ViewBag.Alerts).Count > 0)
-                                {
-                                    foreach (var alert in (List<Alert>)ViewBag.Alerts)
-                                    {
-                                        <tr>
-                                            <td>
-                                                @if (alert.SeverityLevel >= 3)
-                                                {
-                                                    <span class="badge bg-danger">Kritik</span>
-                                                }
-                                                else if (alert.SeverityLevel == 2)
-                                                {
-                                                    <span class="badge bg-warning text-dark">Uyarı</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-info">Bilgi</span>
-                                                }
-                                            </td>
-                                            <td>@(alert.Station?.StationName ?? "Bilinmeyen")</td>
-                                            <td>@alert.AlertMessage</td>
-                                            <td>@alert.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
-                                            <td><button class="btn btn-sm btn-outline-secondary">İncele</button></td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted">Henüz alarm bulunmamaktadır.</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                    <div class="card-body" style="position: relative; min-height: 400px; height: 60vh;">
+                        <canvas id="weatherChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -399,7 +297,7 @@
     </div>
 
     <!-- API Verileri Yan Paneli -->
-    <button class="toggle-panel-btn" onclick="toggleApiPanel()" title="API Verilerini Göster">
+    <button class="toggle-panel-btn" onclick="toggleApiPanel()" title="API Verilerini Goster">
         <i class="fas fa-database"></i> API Verileri
     </button>
     <div id="apiDataPanel" class="api-data-panel">
@@ -421,32 +319,32 @@
             @if (ViewBag.ApiCalled != null && (bool)ViewBag.ApiCalled)
             {
                 <div class="api-data-item" style="background: #e7f3ff; border-left-color: #0d6efd; margin-bottom: 15px;">
-                    <h6><i class="fas fa-info-circle me-2"></i>API Çağrısı Bilgileri</h6>
+                    <h6><i class="fas fa-info-circle me-2"></i>API Cagrisi Bilgileri</h6>
                     <p><strong>Kaynak:</strong> @(ViewBag.ApiSource ?? "Open-Meteo API")</p>
                     @if (ViewBag.ApiCallTime != null)
                     {
-                        <p><strong>Çağrı Zamanı:</strong> @(((DateTime)ViewBag.ApiCallTime).ToString("dd.MM.yyyy HH:mm:ss"))</p>
+                        <p><strong>Cagri Zamani:</strong> @(((DateTime)ViewBag.ApiCallTime).ToString("dd.MM.yyyy HH:mm:ss"))</p>
                     }
                     @if (ViewBag.ApiLatitude != null && ViewBag.ApiLongitude != null)
                     {
                         <p><strong>Koordinatlar:</strong> @ViewBag.ApiLatitude, @ViewBag.ApiLongitude</p>
                     }
-                    <p><strong>Durum:</strong> <span style="color: #28a745;"><i class="fas fa-check-circle"></i> Başarılı</span></p>
+                    <p><strong>Durum:</strong> <span style="color: #28a745;"><i class="fas fa-check-circle"></i> Basarili</span></p>
                 </div>
 
                 <div class="api-data-item" style="background: #f8f9fa; border-left-color: #6c757d;">
                     <h6><i class="fas fa-thermometer-half me-2"></i>Hava Durumu Verileri</h6>
                     @if (ViewBag.ApiTemperature != null)
                     {
-                        <p><strong>Sıcaklık:</strong> <span style="color: #dc3545; font-size: 16px; font-weight: bold;">@ViewBag.ApiTemperature °C</span></p>
+                        <p><strong>Sicaklik:</strong> <span style="color: #dc3545; font-size: 16px; font-weight: bold;">@ViewBag.ApiTemperature C</span></p>
                     }
                     @if (ViewBag.ApiWindspeed != null)
                     {
-                        <p><strong>Rüzgar Hızı:</strong> @ViewBag.ApiWindspeed km/h</p>
+                        <p><strong>Ruzgar Hizi:</strong> @ViewBag.ApiWindspeed km/h</p>
                     }
                     @if (ViewBag.ApiWinddirection != null)
                     {
-                        <p><strong>Rüzgar Yönü:</strong> @ViewBag.ApiWinddirection°</p>
+                        <p><strong>Ruzgar Yonu:</strong> @ViewBag.ApiWinddirection derece</p>
                     }
                     @if (ViewBag.ApiWeathercode != null)
                     {
@@ -454,14 +352,123 @@
                     }
                     @if (ViewBag.ApiTime != null)
                     {
-                        <p><strong>Veri Zamanı:</strong> @ViewBag.ApiTime</p>
+                        <p><strong>Veri Zamani:</strong> @ViewBag.ApiTime</p>
                     }
                 </div>
             }
-            else if (ViewBag.UpdateError == null)
+
+            @* Risk Analizi Bolumu *@
+            @if (ViewBag.RiskDurum != null)
+            {
+                string riskBgColor = "#f8f9fa";
+                string riskBorderColor = "#6c757d";
+                string riskIcon = "fa-info-circle";
+                string riskTextColor = "#495057";
+                
+                if (ViewBag.RiskDurum == "Basarili")
+                {
+                    if (ViewBag.RiskIsRisky != null && (bool)ViewBag.RiskIsRisky)
+                    {
+                        if (ViewBag.RiskLevel != null && ViewBag.RiskLevel.ToString().Contains("KRITIK"))
+                        {
+                            riskBgColor = "#ffebee";
+                            riskBorderColor = "#f44336";
+                            riskIcon = "fa-exclamation-triangle";
+                            riskTextColor = "#c62828";
+                        }
+                        else if (ViewBag.RiskLevel != null && ViewBag.RiskLevel.ToString().Contains("TEHLIKELI"))
+                        {
+                            riskBgColor = "#fff3e0";
+                            riskBorderColor = "#ff9800";
+                            riskIcon = "fa-exclamation-circle";
+                            riskTextColor = "#e65100";
+                        }
+                        else
+                        {
+                            riskBgColor = "#fff9c4";
+                            riskBorderColor = "#fbc02d";
+                            riskIcon = "fa-exclamation";
+                            riskTextColor = "#f57f17";
+                        }
+                    }
+                    else
+                    {
+                        riskBgColor = "#e8f5e9";
+                        riskBorderColor = "#4caf50";
+                        riskIcon = "fa-check-circle";
+                        riskTextColor = "#2e7d32";
+                    }
+                }
+                else if (ViewBag.RiskDurum == "Baglanti Yok")
+                {
+                    riskBgColor = "#f3e5f5";
+                    riskBorderColor = "#9c27b0";
+                    riskIcon = "fa-unlink";
+                    riskTextColor = "#6a1b9a";
+                }
+                else
+                {
+                    riskBgColor = "#ffebee";
+                    riskBorderColor = "#f44336";
+                    riskIcon = "fa-times-circle";
+                    riskTextColor = "#c62828";
+                }
+                
+                <div class="api-data-item" style="background: @riskBgColor; border-left-color: @riskBorderColor; margin-top: 20px;">
+                    <h6 style="color: @riskTextColor;"><i class="fas @riskIcon me-2"></i>Risk Analizi</h6>
+                    @if (ViewBag.RiskDurum == "Basarili")
+                    {
+                        <p style="margin: 5px 0;"><strong>Risk Seviyesi:</strong> 
+                            <span style="color: @riskTextColor; font-weight: bold; font-size: 16px;">
+                                @(ViewBag.RiskLevel ?? "NORMAL")
+                            </span>
+                        </p>
+                        if (ViewBag.RiskIsRisky != null && (bool)ViewBag.RiskIsRisky)
+                        {
+                            <p style="margin: 5px 0;"><strong>Durum:</strong> <span style="color: #c62828; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Riskli</span></p>
+                        }
+                        else
+                        {
+                            <p style="margin: 5px 0;"><strong>Durum:</strong> <span style="color: #2e7d32; font-weight: bold;"><i class="fas fa-check-circle"></i> Normal</span></p>
+                        }
+                        if (ViewBag.RiskMessage != null)
+                        {
+                            <p style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 5px; color: @riskTextColor;">
+                                <i class="fas fa-info-circle me-2"></i>@ViewBag.RiskMessage
+                            </p>
+                        }
+                    }
+                    else
+                    {
+                        <p style="margin: 5px 0; color: @riskTextColor;">
+                            <i class="fas @riskIcon me-2"></i>@(ViewBag.RiskMessage ?? "Risk analizi yapilamadi")
+                        </p>
+                        if (ViewBag.RiskDurum == "Baglanti Yok")
+                        {
+                            <p class="text-muted" style="font-size: 12px; margin-top: 10px;">
+                                <i class="fas fa-info-circle"></i> Risk Analiz Servisi calismiyor. Port 5058'de calistigindan emin olun.
+                            </p>
+                        }
+                    }
+                </div>
+            }
+
+            @* LLM Tahmin Bolumu *@
+            <div class="api-data-item" style="background: #f8f9fa; border-left-color: #9c27b0;">
+                <h6><i class="fas fa-brain me-2"></i>LLM Tahmin</h6>
+                <p class="text-muted" style="font-size: 13px; margin-bottom: 15px;">
+                    Yapay zeka ile sicaklik tahmini yapmak icin butona tiklayin.
+                </p>
+                <button id="llmTahminBtn" class="btn btn-primary btn-sm w-100" onclick="llmTahminYap()">
+                    <i class="fas fa-magic me-2"></i>Tahmin Yap
+                </button>
+                <div id="llmTahminSonuc" style="margin-top: 15px; display: none;"></div>
+            </div>
+
+            @if ((ViewBag.ApiCalled == null || !(bool)ViewBag.ApiCalled) && ViewBag.UpdateError == null)
             {
                 <div class="api-data-item">
-                    <p class="text-muted text-center">Henüz API'den veri çekilmedi. "Veriyi Güncelle" butonuna tıklayın.</p>
+                    <p class="text-muted text-center">Henuz API'den veri cekilmedi. "Veriyi Guncelle" butonuna tiklayin.</p>
                 </div>
             }
         </div>
@@ -469,13 +476,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // API Panel açma/kapama fonksiyonu
+        // API Panel acma/kapama fonksiyonu
         function toggleApiPanel() {
             var panel = document.getElementById('apiDataPanel');
             panel.classList.toggle('open');
         }
 
-        // Sayfa yüklendiğinde, eğer API verisi varsa paneli aç
+        // Sayfa yuklendiginde, eger API verisi varsa paneli ac
         window.onload = function() {
             @if (ViewBag.ApiCalled != null && (bool)ViewBag.ApiCalled)
             {
@@ -487,7 +494,7 @@
             }
         };
 
-        // Şehir değiştirme fonksiyonu
+        // Sehir degistirme fonksiyonu
         function changeCity() {
             var cityId = document.getElementById('citySelect').value;
             if (cityId && cityId != "0") {
@@ -497,12 +504,12 @@
             }
         }
 
-        // İstasyon değiştirme fonksiyonu
+        // Istasyon degistirme fonksiyonu
         function changeStation() {
             var cityId = document.getElementById('citySelect').value;
             var stationId = document.getElementById('stationSelect').value;
             
-            // Hidden input'u güncelle
+            // Hidden input'u guncelle
             document.getElementById('hiddenStationId').value = stationId;
             
             if (stationId && stationId != "0") {
@@ -514,7 +521,7 @@
             }
         }
 
-        // Dinamik grafik çizimi - Veritabanından gelen verilerle
+        // Dinamik grafik cizimi - Veritabanindan gelen verilerle
         var chartLabels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ChartLabels ?? new List<string> { "00:00", "04:00", "08:00", "12:00", "16:00", "20:00" }));
         var chartData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ChartData ?? new List<object> { 0, 0, 0, 0, 0, 0 }));
 
@@ -524,24 +531,165 @@
             data: {
                 labels: chartLabels,
                 datasets: [{
-                    label: 'Sıcaklık (°C)',
+                    label: 'Sicaklik (C)',
                     data: chartData,
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#0d6efd',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
                 }]
             },
             options: { 
-                responsive: true, 
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: { 
+                    legend: { 
+                        display: false 
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Sıcaklık: ' + context.parsed.y.toFixed(1) + '°C';
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
-                        beginAtZero: false
+                        beginAtZero: false,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            },
+                            callback: function(value) {
+                                return value.toFixed(1) + '°C';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
                     }
                 }
             }
         });
+
+        // Pencere boyutu değiştiğinde grafiği yeniden boyutlandır
+        window.addEventListener('resize', function() {
+            if (weatherChart) {
+                weatherChart.resize();
+            }
+        });
+
+        // LLM Tahmin Fonksiyonu
+        function llmTahminYap() {
+            var stationId = @(ViewBag.StationID ?? 0);
+            
+            if (stationId == 0) {
+                alert('Lutfen once bir istasyon secin!');
+                return;
+            }
+
+            var btn = document.getElementById('llmTahminBtn');
+            var sonucDiv = document.getElementById('llmTahminSonuc');
+            
+            // Butonu devre disi birak ve yukleniyor goster
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Tahmin Yapiliyor...';
+            sonucDiv.style.display = 'none';
+
+            // AJAX istegi - Form data olarak gonder
+            var formData = new FormData();
+            formData.append('stationId', stationId);
+
+            fetch('/Home/LLMTahminYap', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Butonu tekrar aktif et
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic me-2"></i>Tahmin Yap';
+
+                // Sonucu goster
+                sonucDiv.style.display = 'block';
+                
+                if (data.basari) {
+                    sonucDiv.innerHTML = `
+                        <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; border-radius: 5px;">
+                            <h6 style="margin: 0 0 10px 0; color: #2e7d32;"><i class="fas fa-check-circle me-2"></i>Tahmin Basarili</h6>
+                            <p style="margin: 5px 0;"><strong>Tahmin Edilen Sicaklik:</strong> 
+                                <span style="color: #2e7d32; font-size: 18px; font-weight: bold;">${data.tahmin_edilen_sicaklik} C</span>
+                            </p>
+                            <p style="margin: 5px 0;"><strong>Sehir:</strong> ${data.sehir}</p>
+                            <p style="margin: 5px 0;"><strong>Tahmin Tarihi:</strong> ${data.tarih}</p>
+                        </div>
+                    `;
+                } else {
+                    sonucDiv.innerHTML = `
+                        <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 15px; border-radius: 5px;">
+                            <h6 style="margin: 0 0 10px 0; color: #c62828;"><i class="fas fa-exclamation-circle me-2"></i>Tahmin Hatasi</h6>
+                            <p style="margin: 5px 0; color: #c62828;">${data.hata || 'LLM tahmin yapilamadi'}</p>
+                            <p class="text-muted" style="font-size: 12px; margin-top: 10px;">
+                                <i class="fas fa-info-circle"></i> Python LLM sunucusunun calistigindan emin olun (port 5000)
+                            </p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                // Butonu tekrar aktif et
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic me-2"></i>Tahmin Yap';
+                
+                // Hata goster
+                sonucDiv.style.display = 'block';
+                sonucDiv.innerHTML = `
+                    <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 15px; border-radius: 5px;">
+                        <h6 style="margin: 0 0 10px 0; color: #c62828;"><i class="fas fa-exclamation-circle me-2"></i>Hata</h6>
+                        <p style="margin: 5px 0; color: #c62828;">Tahmin yapilirken bir hata olustu: ${error.message}</p>
+                        <p class="text-muted" style="font-size: 12px; margin-top: 10px;">
+                            <i class="fas fa-info-circle"></i> Tarayici konsolunu (F12) kontrol edin
+                        </p>
+                    </div>
+                `;
+                console.error('LLM Tahmin Hatasi:', error);
+            });
+        }
     </script>
 </body>
 </html>

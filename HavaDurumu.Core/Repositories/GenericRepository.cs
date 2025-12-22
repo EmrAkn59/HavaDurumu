@@ -1,5 +1,4 @@
-﻿using HavaDurumu.DataAccess.Abstract;
-using HavaDurumu.Data.Context;
+using HavaDurumu.Core.Abstract;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -9,17 +8,15 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HavaDurumu.DataAccess.Repositories
+namespace HavaDurumu.Core.Repositories
 {
     public class GenericRepository<T> : IGenericDal<T> where T : class
     {
         // Context nesnemizi oluşturuyoruz
-        // Not: .NET Framework projelerinde context'i using içinde new'lemek güvenlidir.
-        // Dependency Injection yapısı kuruluysa Constructor'dan da alınabilir.
+        // DbContext kullanarak AppDbContext veya başka bir DbContext türevi kabul edebiliriz
+        DbContext _context;
 
-        AppDbContext _context;
-
-        public GenericRepository(AppDbContext context)
+        public GenericRepository(DbContext context)
         {
             _context = context;
         }

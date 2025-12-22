@@ -51,7 +51,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="abstract\IGenericDal.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="entityframework\EfMeasurementDal.cs" />
     <Compile Include="entityframework\EfReportDal.cs" />
@@ -63,13 +62,16 @@
     <Compile Include="interfaces\IStationDal.cs" />
     <Compile Include="interfaces\IUserDal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="repositories\GenericRepository.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\HavaDurumu.Core\HavaDurumu.Core.csproj">
+      <Project>{0c74c6d5-6aa2-47d5-936a-8088216da529}</Project>
+      <Name>HavaDurumu.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\HavaDurumu.Data\HavaDurumu.Data.csproj">
       <Project>{555E3D14-3416-4CC3-93D8-C64DD520DF3E}</Project>
       <Name>HavaDurumu.Data</Name>

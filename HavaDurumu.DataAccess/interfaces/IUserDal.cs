@@ -1,4 +1,4 @@
-﻿using HavaDurumu.DataAccess.Abstract;
+using HavaDurumu.Core.Abstract;
 using HavaDurumu.Data.Entities;
 using System;
 using System.Collections.Generic;

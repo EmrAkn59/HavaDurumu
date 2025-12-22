@@ -1,11 +1,12 @@
-﻿using System;
+using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace HavaDurumu.Integration
 {
-    // Node.js'ten gelecek verinin kalıbı
+    // Node.js'ten gelecek verinin kalibi
     public class NodeVerisi
     {
         public string mesaj { get; set; }
@@ -18,7 +19,7 @@ namespace HavaDurumu.Integration
 
     public class NodeService
     {
-        // Node.js sunucusu 3000. portta çalışıyor
+        // Node.js sunucusu 3000. portta calisiyor
         private const string URL = "http://127.0.0.1:3000";
 
         public async Task<NodeVerisi> NodeVerisiniGetir(double? pm25 = null)
@@ -30,7 +31,8 @@ namespace HavaDurumu.Integration
                     string url = URL;
                     if (pm25.HasValue)
                     {
-                        url += $"?pm25={pm25.Value}";
+                        // InvariantCulture kullanarak . ile ondalik ayirici garantile
+                        url += $"?pm25={pm25.Value.ToString(CultureInfo.InvariantCulture)}";
                     }
 
                     // Timeout ayarla (10 saniye)
@@ -51,7 +53,7 @@ namespace HavaDurumu.Integration
                     {
                         return new NodeVerisi 
                         { 
-                            mesaj = $"Node.js sunucusu yanıt vermedi (Status: {response.StatusCode})", 
+                            mesaj = $"Node.js sunucusu yanit vermedi (Status: {response.StatusCode})", 
                             durum = "Hata" 
                         };
                     }
@@ -60,23 +62,23 @@ namespace HavaDurumu.Integration
                 {
                     return new NodeVerisi 
                     { 
-                        mesaj = "Node.js sunucusuna bağlanılamadı (Timeout)", 
-                        durum = "Bağlantı Yok" 
+                        mesaj = "Node.js sunucusuna baglanamadi (Timeout)", 
+                        durum = "Baglanti Yok" 
                     };
                 }
                 catch (HttpRequestException ex)
                 {
                     return new NodeVerisi 
                     { 
-                        mesaj = $"Node.js sunucusuna bağlanılamadı: {ex.Message}", 
-                        durum = "Bağlantı Yok" 
+                        mesaj = $"Node.js sunucusuna baglanamadi: {ex.Message}", 
+                        durum = "Baglanti Yok" 
                     };
                 }
                 catch (Exception ex)
                 {
                     return new NodeVerisi 
                     { 
-                        mesaj = $"Node.js hatası: {ex.Message}", 
+                        mesaj = $"Node.js hatasi: {ex.Message}", 
                         durum = "Hata" 
                     };
                 }

@@ -15,6 +15,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HavaDurumu.Integration", "H
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HavaDurumu.Core", "HavaDurumu.Core\HavaDurumu.Core.csproj", "{0C74C6D5-6AA2-47D5-936A-8088216DA529}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RiskAnalizServisi", "RiskAnalizServisi\RiskAnalizServisi.csproj", "{F1A2B3C4-D5E6-F7A8-B9C0-D1E2F3A4B5C6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Çözüm Öğeleri", "Çözüm Öğeleri", "{AC80F682-3D55-C8F8-4895-A4A9EDD49434}"
+	ProjectSection(SolutionItems) = preProject
+		LLm\app.py = LLm\app.py
+		LLm\final_model.pkl = LLm\final_model.pkl
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +53,10 @@ Global
 		{0C74C6D5-6AA2-47D5-936A-8088216DA529}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C74C6D5-6AA2-47D5-936A-8088216DA529}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C74C6D5-6AA2-47D5-936A-8088216DA529}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1A2B3C4-D5E6-F7A8-B9C0-D1E2F3A4B5C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-D5E6-F7A8-B9C0-D1E2F3A4B5C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1A2B3C4-D5E6-F7A8-B9C0-D1E2F3A4B5C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-D5E6-F7A8-B9C0-D1E2F3A4B5C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

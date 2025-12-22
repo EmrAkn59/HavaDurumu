@@ -1,5 +1,5 @@
-﻿using HavaDurumu.DataAccess.Interfaces;
-using HavaDurumu.DataAccess.Repositories;
+using HavaDurumu.DataAccess.Interfaces;
+using HavaDurumu.Core.Repositories;
 using HavaDurumu.Data.Entities;
 using HavaDurumu.Data.Context;
 using System;

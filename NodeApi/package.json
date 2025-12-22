@@ -1,0 +1,15 @@
+{
+  "name": "node-api",
+  "version": "1.0.0",
+  "description": "Node.js API sunucusu",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "api",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "ISC"
+}

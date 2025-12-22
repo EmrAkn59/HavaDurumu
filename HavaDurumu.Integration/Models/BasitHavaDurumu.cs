@@ -1,11 +1,12 @@
-﻿using System;
+using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace HavaDurumu.Integration
 {
-    // 1. Veriyi karşılayacak basit kalıp (Model)
+    // 1. Veriyi karsilayacak basit kalip (Model)
     public class HavaDurumuVerisi
     {
         public CurrentWeather current_weather { get; set; }
@@ -13,14 +14,14 @@ namespace HavaDurumu.Integration
 
     public class CurrentWeather
     {
-        public double temperature { get; set; } // Sıcaklık
-        public double windspeed { get; set; }   // Rüzgar hızı
-        public double winddirection { get; set; } // Rüzgar yönü
+        public double temperature { get; set; } // Sicaklik
+        public double windspeed { get; set; }   // Ruzgar hizi
+        public double winddirection { get; set; } // Ruzgar yonu
         public int weathercode { get; set; } // Hava durumu kodu
         public string time { get; set; } // Zaman
     }
 
-    // Alternatif API için model (wttr.in)
+    // Alternatif API icin model (wttr.in)
     public class WttrInResponse
     {
         public Current[] current_condition { get; set; }
@@ -35,20 +36,20 @@ namespace HavaDurumu.Integration
         public string localObsDateTime { get; set; }
     }
 
-    // 2. Veriyi çeken basit servis (API İşlemi)
+    // 2. Veriyi ceken basit servis (API Islemi)
     public class HavaDurumuServisi
     {
-        // Artık dışarıdan enlem (lat) ve boylam (lon) alıyor
+        // Artik disaridan enlem (lat) ve boylam (lon) aliyor
         public async Task<HavaDurumuVerisi> VeriyiGetir(double lat, double lon)
         {
-            // Önce Open-Meteo API'sini dene
+            // Once Open-Meteo API'sini dene
             HavaDurumuVerisi result = await VeriyiGetirOpenMeteo(lat, lon);
             if (result != null && result.current_weather != null)
             {
                 return result;
             }
 
-            // Open-Meteo başarısız olursa, alternatif API'yi dene (wttr.in)
+            // Open-Meteo basarisiz olursa, alternatif API'yi dene (wttr.in)
             return await VeriyiGetirWttrIn(lat, lon);
         }
 
@@ -57,12 +58,15 @@ namespace HavaDurumu.Integration
         {
             try
             {
-                string url = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true";
+                // InvariantCulture kullanarak . ile ondalik ayirici garantile
+                string latStr = lat.ToString(CultureInfo.InvariantCulture);
+                string lonStr = lon.ToString(CultureInfo.InvariantCulture);
+                string url = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}&current_weather=true";
 
                 using (HttpClient client = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                    client.Timeout = TimeSpan.FromSeconds(10); // 10 saniye timeout
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                    client.Timeout = TimeSpan.FromSeconds(15); // 15 saniye timeout
                     var response = await client.GetAsync(url);
 
                     if (response.IsSuccessStatusCode)
@@ -72,9 +76,9 @@ namespace HavaDurumu.Integration
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Hata durumunda null döndür, alternatif API denenir
+                System.Diagnostics.Debug.WriteLine($"Open-Meteo API Hatasi: {ex.Message}");
             }
             return null;
         }
@@ -84,13 +88,15 @@ namespace HavaDurumu.Integration
         {
             try
             {
-                // wttr.in API'si koordinatları kabul ediyor
-                string url = $"https://wttr.in/{lat},{lon}?format=j1";
+                // InvariantCulture kullanarak . ile ondalik ayirici garantile
+                string latStr = lat.ToString(CultureInfo.InvariantCulture);
+                string lonStr = lon.ToString(CultureInfo.InvariantCulture);
+                string url = $"https://wttr.in/{latStr},{lonStr}?format=j1";
 
                 using (HttpClient client = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                    client.Timeout = TimeSpan.FromSeconds(10);
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                    client.Timeout = TimeSpan.FromSeconds(15);
                     var response = await client.GetAsync(url);
 
                     if (response.IsSuccessStatusCode)
@@ -102,15 +108,23 @@ namespace HavaDurumu.Integration
                         {
                             var current = wttrData.current_condition[0];
                             
-                            // wttr.in verisini HavaDurumuVerisi formatına dönüştür
+                            // wttr.in verisini HavaDurumuVerisi formatina donustur
+                            double temp = 0, wind = 0, windDir = 0;
+                            int code = 0;
+                            
+                            double.TryParse(current.temp_C, NumberStyles.Any, CultureInfo.InvariantCulture, out temp);
+                            double.TryParse(current.windspeedKmph, NumberStyles.Any, CultureInfo.InvariantCulture, out wind);
+                            double.TryParse(current.winddirDegree, NumberStyles.Any, CultureInfo.InvariantCulture, out windDir);
+                            int.TryParse(current.weatherCode, out code);
+
                             return new HavaDurumuVerisi
                             {
                                 current_weather = new CurrentWeather
                                 {
-                                    temperature = double.Parse(current.temp_C ?? "0"),
-                                    windspeed = double.Parse(current.windspeedKmph ?? "0"),
-                                    winddirection = double.Parse(current.winddirDegree ?? "0"),
-                                    weathercode = int.Parse(current.weatherCode ?? "0"),
+                                    temperature = temp,
+                                    windspeed = wind,
+                                    winddirection = windDir,
+                                    weathercode = code,
                                     time = current.localObsDateTime ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm")
                                 }
                             };
@@ -118,9 +132,9 @@ namespace HavaDurumu.Integration
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Hata durumunda null döndür
+                System.Diagnostics.Debug.WriteLine($"wttr.in API Hatasi: {ex.Message}");
             }
             return null;
         }

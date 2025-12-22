@@ -74,6 +74,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\HavaDurumu.Core\HavaDurumu.Core.csproj">
+      <Project>{0c74c6d5-6aa2-47d5-936a-8088216da529}</Project>
+      <Name>HavaDurumu.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\HavaDurumu.DataAccess\HavaDurumu.DataAccess.csproj">
       <Project>{47FD2440-BAEB-4B05-8CE8-C67EB9BCCA60}</Project>
       <Name>HavaDurumu.DataAccess</Name>
